@@ -56,6 +56,35 @@ ros2 launch pb2025_sentry_behavior pb2025_sentry_behavior_launch.py
 
 ## 3. Behaviors
 
+### 3.0 Referee System Integration
+
+本包通过 `referee_topic_translator.py` 节点与裁判系统通信，将 `dji_referee_protocol` 的消息类型转换为 `pb_rm_interfaces` 类型供行为树使用。
+
+**依赖**：
+- [dji_referee_protocol](https://github.com/unnc-aim/DJI-communication-protocol) - DJI 裁判系统通信协议包
+
+**输入话题** (来自 `dji_referee_protocol`)：
+- `/referee/common/game_status` (dji_referee_protocol/msg/GameStatus)
+- `/referee/common/robot_hp` (dji_referee_protocol/msg/RobotHP)
+- `/referee/common/field_event` (dji_referee_protocol/msg/FieldEvent)
+- `/referee/common/robot_performance` (dji_referee_protocol/msg/RobotPerformance)
+- `/referee/common/robot_heat` (dji_referee_protocol/msg/RobotHeat)
+- `/referee/common/robot_position` (dji_referee_protocol/msg/RobotPosition)
+- `/referee/common/robot_buff` (dji_referee_protocol/msg/RobotBuff)
+- `/referee/common/damage_state` (dji_referee_protocol/msg/DamageState)
+- `/referee/common/allowed_shoot` (dji_referee_protocol/msg/AllowedShoot)
+- `/referee/common/rfid_status` (dji_referee_protocol/msg/RFIDStatus)
+- `/referee/common/ground_robot_position` (dji_referee_protocol/msg/GroundRobotPosition)
+
+**输出话题** (供行为树使用)：
+- `referee/game_status` (pb_rm_interfaces/msg/GameStatus)
+- `referee/all_robot_hp` (pb_rm_interfaces/msg/GameRobotHP)
+- `referee/robot_status` (pb_rm_interfaces/msg/RobotStatus)
+- `referee/rfid_status` (pb_rm_interfaces/msg/RfidStatus)
+- `referee/event_data` (pb_rm_interfaces/msg/EventData)
+- `referee/buff` (pb_rm_interfaces/msg/Buff)
+- `referee/ground_robot_position` (pb_rm_interfaces/msg/GroundRobotPosition)
+
 ### 3.1 Action
 
 #### CalculateAttackPose
