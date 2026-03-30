@@ -62,8 +62,8 @@ def generate_launch_description():
     )
     declare_translator_input_prefix_cmd = DeclareLaunchArgument(
         "translator_input_prefix",
-        default_value="/referee",
-        description="Input topic prefix for the referee topic translator",
+        default_value="/referee/common",
+        description="Input topic prefix for the referee topic translator (dji_referee_protocol outputs)",
     )
 
     bringup_cmd_group = GroupAction(

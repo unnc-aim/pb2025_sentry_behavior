@@ -20,6 +20,7 @@
 #include "auto_aim_interfaces/msg/armors.hpp"
 #include "auto_aim_interfaces/msg/target.hpp"
 #include "behaviortree_cpp/xml_parsing.h"
+#include "dji_referee_protocol/msg/robot_performance.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "pb_rm_interfaces/msg/buff.hpp"
 #include "pb_rm_interfaces/msg/event_data.hpp"
@@ -29,7 +30,6 @@
 #include "pb_rm_interfaces/msg/rfid_status.hpp"
 #include "pb_rm_interfaces/msg/robot_status.hpp"
 #include "std_msgs/msg/int32.hpp"
-#include "std_msgs/msg/string.hpp"
 namespace pb2025_sentry_behavior
 {
 
@@ -58,8 +58,8 @@ SentryBehaviorServer::SentryBehaviorServer(const rclcpp::NodeOptions & options)
   subscribe<pb_rm_interfaces::msg::RobotStatus>("referee/robot_status", "referee_robotStatus");
   subscribe<pb_rm_interfaces::msg::Buff>("referee/buff", "referee_buff");
   subscribe<std_msgs::msg::Int32>("manual_start", "manual_start");
-  subscribe<std_msgs::msg::String>(
-    "/referee/robot_performance", "referee_raw_performance");
+  subscribe<dji_referee_protocol::msg::RobotPerformance>(
+    "/referee/common/robot_performance", "referee_robot_performance");
 
   auto detector_qos = rclcpp::SensorDataQoS();
   subscribe<auto_aim_interfaces::msg::Armors>("detector/armors", "detector_armors", detector_qos);

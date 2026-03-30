@@ -26,25 +26,30 @@ PrintRefereeStatusAction::PrintRefereeStatusAction(
 BT::PortsList PrintRefereeStatusAction::providedPorts()
 {
   return {
-    BT::InputPort<std_msgs::msg::String>(
-      "raw_performance", "{@referee_raw_performance}",
-      "Raw JSON String from /referee/robot_performance"),
+    BT::InputPort<dji_referee_protocol::msg::RobotPerformance>(
+      "robot_performance", "{@referee_robot_performance}",
+      "RobotPerformance from /referee/common/robot_performance"),
   };
 }
 
 BT::NodeStatus PrintRefereeStatusAction::tick()
 {
-  auto raw = getInput<std_msgs::msg::String>("raw_performance");
-  if (!raw) {
+  auto msg = getInput<dji_referee_protocol::msg::RobotPerformance>("robot_performance");
+  if (!msg) {
     RCLCPP_WARN(
       logger_,
-      "[WAITING] /referee/robot_performance not received yet. "
+      "[WAITING] /referee/common/robot_performance not received yet. "
       "Ensure dji_referee_protocol is running.");
     return BT::NodeStatus::SUCCESS;
   }
 
   RCLCPP_INFO(logger_, "========== Referee Connection OK ==========");
-  RCLCPP_INFO(logger_, "[/referee/robot_performance] %s", raw->data.c_str());
+  RCLCPP_INFO(
+    logger_,
+    "[/referee/common/robot_performance] robot_id=%d, level=%d, hp=%d/%d, "
+    "heat_limit=%d, power_limit=%d",
+    msg->robot_id, msg->robot_level, msg->current_hp, msg->maximum_hp,
+    msg->shooter_barrel_heat_limit, msg->chassis_power_limit);
   RCLCPP_INFO(logger_, "============================================");
   return BT::NodeStatus::SUCCESS;
 }

@@ -18,8 +18,8 @@
 #include <string>
 
 #include "behaviortree_cpp/action_node.h"
+#include "dji_referee_protocol/msg/robot_performance.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
 
 namespace pb2025_sentry_behavior
 {
