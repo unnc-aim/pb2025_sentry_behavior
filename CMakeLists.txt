@@ -122,11 +122,6 @@ install(
   RUNTIME DESTINATION share/${PROJECT_NAME}/bt_plugins
 )
 
-install(
-  PROGRAMS scripts/referee_topic_translator.py
-  DESTINATION lib/${PROJECT_NAME}
-)
-
 ament_auto_package(
   INSTALL_TO_SHARE
   behavior_trees

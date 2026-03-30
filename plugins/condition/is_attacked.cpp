@@ -14,7 +14,7 @@
 
 #include "pb2025_sentry_behavior/plugins/condition/is_attacked.hpp"
 
-#include "pb_rm_interfaces/msg/robot_status.hpp"
+#include "dji_referee_protocol/msg/damage_state.hpp"
 
 namespace pb2025_sentry_behavior
 {
@@ -26,13 +26,14 @@ IsAttackedCondition::IsAttackedCondition(const std::string & name, const BT::Nod
 
 BT::NodeStatus IsAttackedCondition::checkIsAttacked()
 {
-  auto msg = getInput<pb_rm_interfaces::msg::RobotStatus>("key_port");
+  auto msg = getInput<dji_referee_protocol::msg::DamageState>("damage_port");
   if (!msg) {
-    RCLCPP_ERROR(logger_, "RobotStatus message is not available");
+    RCLCPP_ERROR(logger_, "DamageState message is not available");
     return BT::NodeStatus::FAILURE;
   }
 
-  const bool is_attacked = msg->is_hp_deduced && msg->hp_deduction_reason == msg->ARMOR_HIT;
+  // DamageState is latched: non-zero damage_type means damage event occurred
+  const bool is_attacked = (msg->damage_type != 0);
 
   if (is_attacked) {
     RCLCPP_DEBUG(logger_, "Armor hit detected");
@@ -65,8 +66,8 @@ BT::NodeStatus IsAttackedCondition::checkIsAttacked()
 BT::PortsList IsAttackedCondition::providedPorts()
 {
   return {
-    BT::InputPort<pb_rm_interfaces::msg::RobotStatus>(
-      "key_port", "{@referee_robotStatus}", "RobotStatus port on blackboard"),
+    BT::InputPort<dji_referee_protocol::msg::DamageState>(
+      "damage_port", "{@referee_damageState}", "DamageState port on blackboard"),
     BT::OutputPort<float>(
       "gimbal_pitch", "{gimbal_pitch}",
       "Move gimbal_pitch (const 0.0) to the direction of the hit armor plate"),

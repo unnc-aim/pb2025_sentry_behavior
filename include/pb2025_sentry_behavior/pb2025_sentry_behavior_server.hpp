@@ -18,10 +18,12 @@
 #include <behaviortree_cpp/loggers/bt_cout_logger.h>
 
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
 #include "behaviortree_ros2/tree_execution_server.hpp"
+#include "dji_referee_protocol/msg/damage_state.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace pb2025_sentry_behavior
@@ -73,10 +75,16 @@ private:
     const std::string & topic, const std::string & bb_key,
     const rclcpp::QoS & qos = rclcpp::QoS(10));
 
+  void onDjiDamageState(const dji_referee_protocol::msg::DamageState::SharedPtr msg);
+
   std::vector<std::shared_ptr<rclcpp::SubscriptionBase>> subscriptions_;
   std::shared_ptr<BT::StdCoutLogger> logger_cout_;
   uint32_t tick_count_;
   bool use_cout_logger_;
+
+  // Damage latch: set on damage event, cleared after one BT tick
+  std::mutex damage_mutex_;
+  bool damage_on_bb_{false};
 };
 
 }  // namespace pb2025_sentry_behavior

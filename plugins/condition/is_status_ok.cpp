@@ -14,10 +14,15 @@
 
 #include "pb2025_sentry_behavior/plugins/condition/is_status_ok.hpp"
 
+#include "dji_referee_protocol/msg/allowed_shoot.hpp"
+#include "dji_referee_protocol/msg/robot_heat.hpp"
+#include "dji_referee_protocol/msg/robot_performance.hpp"
+
 namespace pb2025_sentry_behavior
 {
 
-IsStatusOKCondition::IsStatusOKCondition(const std::string & name, const BT::NodeConfig & config)
+IsStatusOKCondition::IsStatusOKCondition(
+  const std::string & name, const BT::NodeConfig & config)
 : BT::SimpleConditionNode(name, std::bind(&IsStatusOKCondition::checkRobotStatus, this), config)
 {
 }
@@ -25,9 +30,21 @@ IsStatusOKCondition::IsStatusOKCondition(const std::string & name, const BT::Nod
 BT::NodeStatus IsStatusOKCondition::checkRobotStatus()
 {
   int hp_min, heat_max, ammo_min;
-  auto msg = getInput<pb_rm_interfaces::msg::RobotStatus>("key_port");
-  if (!msg) {
-    RCLCPP_ERROR(logger_, "RobotStatus message is not available");
+
+  auto hp_msg = getInput<dji_referee_protocol::msg::RobotPerformance>("hp_port");
+  auto heat_msg = getInput<dji_referee_protocol::msg::RobotHeat>("heat_port");
+  auto ammo_msg = getInput<dji_referee_protocol::msg::AllowedShoot>("ammo_port");
+
+  if (!hp_msg) {
+    RCLCPP_ERROR(logger_, "RobotPerformance message is not available");
+    return BT::NodeStatus::FAILURE;
+  }
+  if (!heat_msg) {
+    RCLCPP_ERROR(logger_, "RobotHeat message is not available");
+    return BT::NodeStatus::FAILURE;
+  }
+  if (!ammo_msg) {
+    RCLCPP_ERROR(logger_, "AllowedShoot message is not available");
     return BT::NodeStatus::FAILURE;
   }
 
@@ -35,9 +52,9 @@ BT::NodeStatus IsStatusOKCondition::checkRobotStatus()
   getInput("heat_max", heat_max);
   getInput("ammo_min", ammo_min);
 
-  const bool is_hp_ok = (msg->current_hp >= hp_min);
-  const bool is_heat_ok = (msg->shooter_17mm_1_barrel_heat <= heat_max);
-  const bool is_ammo_ok = (msg->projectile_allowance_17mm >= ammo_min);
+  const bool is_hp_ok = (hp_msg->current_hp >= hp_min);
+  const bool is_heat_ok = (heat_msg->shooter_17mm_barrel_heat <= heat_max);
+  const bool is_ammo_ok = (ammo_msg->projectile_allowance_17mm >= ammo_min);
 
   return (is_hp_ok && is_heat_ok && is_ammo_ok) ? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
 }
@@ -45,11 +62,16 @@ BT::NodeStatus IsStatusOKCondition::checkRobotStatus()
 BT::PortsList IsStatusOKCondition::providedPorts()
 {
   return {
-    BT::InputPort<pb_rm_interfaces::msg::RobotStatus>(
-      "key_port", "{@referee_robotStatus}", "RobotStatus port on blackboard"),
+    BT::InputPort<dji_referee_protocol::msg::RobotPerformance>(
+      "hp_port", "{@referee_robotPerformance}", "RobotPerformance for HP check"),
+    BT::InputPort<dji_referee_protocol::msg::RobotHeat>(
+      "heat_port", "{@referee_robotHeat}", "RobotHeat for heat check"),
+    BT::InputPort<dji_referee_protocol::msg::AllowedShoot>(
+      "ammo_port", "{@referee_allowedShoot}", "AllowedShoot for ammo check"),
     BT::InputPort<int>("hp_min", 300, "Minimum HP. NOTE: Sentry init/max HP is 400"),
     BT::InputPort<int>("heat_max", 350, "Maximum heat. NOTE: Sentry heat limit is 400"),
-    BT::InputPort<int>("ammo_min", 0, "Lower then minimum ammo will return FAILURE")};
+    BT::InputPort<int>("ammo_min", 0, "Lower then minimum ammo will return FAILURE"),
+  };
 }
 }  // namespace pb2025_sentry_behavior
 

@@ -18,15 +18,16 @@
 #include <string>
 
 #include "behaviortree_cpp/condition_node.h"
-#include "pb_rm_interfaces/msg/game_status.hpp"
-#include "pb_rm_interfaces/msg/robot_status.hpp"
+#include "dji_referee_protocol/msg/robot_performance.hpp"
+#include "dji_referee_protocol/msg/robot_heat.hpp"
+#include "dji_referee_protocol/msg/allowed_shoot.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace pb2025_sentry_behavior
 {
 /**
- * @brief A BT::ConditionNode that get GameStatus from port and
- * returns SUCCESS when current game status and remain time is expected
+ * @brief A BT::ConditionNode that checks robot HP, heat, and ammo
+ * from three separate DJI referee protocol topics.
  */
 class IsStatusOKCondition : public BT::SimpleConditionNode
 {
@@ -41,7 +42,7 @@ public:
 
 private:
   /**
-   * @brief Tick function for game status ports
+   * @brief Tick function for robot status check
    */
   BT::NodeStatus checkRobotStatus();
 

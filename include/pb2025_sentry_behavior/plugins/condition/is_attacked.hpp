@@ -19,6 +19,7 @@
 #include <string>
 
 #include "behaviortree_cpp/condition_node.h"
+#include "dji_referee_protocol/msg/damage_state.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace pb2025_sentry_behavior

@@ -20,15 +20,18 @@
 #include "auto_aim_interfaces/msg/armors.hpp"
 #include "auto_aim_interfaces/msg/target.hpp"
 #include "behaviortree_cpp/xml_parsing.h"
+#include "dji_referee_protocol/msg/allowed_shoot.hpp"
+#include "dji_referee_protocol/msg/damage_state.hpp"
+#include "dji_referee_protocol/msg/field_event.hpp"
+#include "dji_referee_protocol/msg/game_status.hpp"
+#include "dji_referee_protocol/msg/ground_robot_position.hpp"
+#include "dji_referee_protocol/msg/rfid_status.hpp"
+#include "dji_referee_protocol/msg/robot_buff.hpp"
+#include "dji_referee_protocol/msg/robot_heat.hpp"
+#include "dji_referee_protocol/msg/robot_hp.hpp"
 #include "dji_referee_protocol/msg/robot_performance.hpp"
+#include "dji_referee_protocol/msg/robot_position.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
-#include "pb_rm_interfaces/msg/buff.hpp"
-#include "pb_rm_interfaces/msg/event_data.hpp"
-#include "pb_rm_interfaces/msg/game_robot_hp.hpp"
-#include "pb_rm_interfaces/msg/game_status.hpp"
-#include "pb_rm_interfaces/msg/ground_robot_position.hpp"
-#include "pb_rm_interfaces/msg/rfid_status.hpp"
-#include "pb_rm_interfaces/msg/robot_status.hpp"
 #include "std_msgs/msg/int32.hpp"
 namespace pb2025_sentry_behavior
 {
@@ -49,17 +52,39 @@ SentryBehaviorServer::SentryBehaviorServer(const rclcpp::NodeOptions & options)
   node()->declare_parameter("use_cout_logger", false);
   node()->get_parameter("use_cout_logger", use_cout_logger_);
 
-  subscribe<pb_rm_interfaces::msg::EventData>("referee/event_data", "referee_eventData");
-  subscribe<pb_rm_interfaces::msg::GameRobotHP>("referee/all_robot_hp", "referee_allRobotHP");
-  subscribe<pb_rm_interfaces::msg::GameStatus>("referee/game_status", "referee_gameStatus");
-  subscribe<pb_rm_interfaces::msg::GroundRobotPosition>(
-    "referee/ground_robot_position", "referee_groundRobotPosition");
-  subscribe<pb_rm_interfaces::msg::RfidStatus>("referee/rfid_status", "referee_rfidStatus");
-  subscribe<pb_rm_interfaces::msg::RobotStatus>("referee/robot_status", "referee_robotStatus");
-  subscribe<pb_rm_interfaces::msg::Buff>("referee/buff", "referee_buff");
-  subscribe<std_msgs::msg::Int32>("manual_start", "manual_start");
+  // Direct DJI referee protocol subscriptions (no translator)
+  subscribe<dji_referee_protocol::msg::GameStatus>(
+    "/referee/common/game_status", "referee_gameStatus");
+  subscribe<dji_referee_protocol::msg::RobotHP>(
+    "/referee/common/robot_hp", "referee_robotHP");
   subscribe<dji_referee_protocol::msg::RobotPerformance>(
-    "/referee/common/robot_performance", "referee_robot_performance");
+    "/referee/common/robot_performance", "referee_robotPerformance");
+  subscribe<dji_referee_protocol::msg::RobotHeat>(
+    "/referee/common/robot_heat", "referee_robotHeat");
+  subscribe<dji_referee_protocol::msg::RobotPosition>(
+    "/referee/common/robot_position", "referee_robotPosition");
+  subscribe<dji_referee_protocol::msg::AllowedShoot>(
+    "/referee/common/allowed_shoot", "referee_allowedShoot");
+  subscribe<dji_referee_protocol::msg::RFIDStatus>(
+    "/referee/common/rfid_status", "referee_rfidStatus");
+  subscribe<dji_referee_protocol::msg::FieldEvent>(
+    "/referee/common/field_event", "referee_fieldEvent");
+  subscribe<dji_referee_protocol::msg::RobotBuff>(
+    "/referee/common/robot_buff", "referee_robotBuff");
+  subscribe<dji_referee_protocol::msg::GroundRobotPosition>(
+    "/referee/common/ground_robot_position", "referee_groundRobotPosition");
+
+  // DamageState: custom callback with latch (visible for exactly one BT tick)
+  auto damage_sub = node()->create_subscription<dji_referee_protocol::msg::DamageState>(
+    "/referee/common/damage_state", rclcpp::QoS(10),
+    [this](const dji_referee_protocol::msg::DamageState::SharedPtr msg) {
+      std::lock_guard<std::mutex> lock(damage_mutex_);
+      globalBlackboard()->set("referee_damageState", *msg);
+      damage_on_bb_ = true;
+    });
+  subscriptions_.push_back(damage_sub);
+
+  subscribe<std_msgs::msg::Int32>("manual_start", "manual_start");
 
   auto detector_qos = rclcpp::SensorDataQoS();
   subscribe<auto_aim_interfaces::msg::Armors>("detector/armors", "detector_armors", detector_qos);
@@ -92,6 +117,14 @@ void SentryBehaviorServer::onTreeCreated(BT::Tree & tree)
 std::optional<BT::NodeStatus> SentryBehaviorServer::onLoopAfterTick(BT::NodeStatus /*status*/)
 {
   ++tick_count_;
+  // Clear damage latch: damage was visible for one BT tick, now reset
+  {
+    std::lock_guard<std::mutex> lock(damage_mutex_);
+    if (damage_on_bb_) {
+      globalBlackboard()->set("referee_damageState", dji_referee_protocol::msg::DamageState());
+      damage_on_bb_ = false;
+    }
+  }
   return std::nullopt;
 }
 

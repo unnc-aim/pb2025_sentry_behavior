@@ -30,7 +30,9 @@
         <IsStatusOK ammo_min="0"
                     heat_max="350"
                     hp_min="200"
-                    key_port="{@referee_robotStatus}"/>
+                    hp_port="{@referee_robotPerformance}"
+                    heat_port="{@referee_robotHeat}"
+                    ammo_port="{@referee_allowedShoot}"/>
         <NavigateGoalPose goal="1;0;0"
                           topic_name="goal_pose"
                           map_frame="map"

@@ -18,7 +18,7 @@
 #include <string>
 
 #include "behaviortree_cpp/condition_node.h"
-#include "pb_rm_interfaces/msg/game_status.hpp"
+#include "dji_referee_protocol/msg/game_status.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace pb2025_sentry_behavior
