@@ -51,12 +51,29 @@
             <input_port name="topic_name" type="std::string" default="__default__placeholder__">Topic name</input_port>
         </Action>
         <Action ID="PrintRefereeStatus">
-            <input_port name="robot_performance" type="dji_referee_protocol::msg::RobotPerformance_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_robot_performance}">RobotPerformance from /referee/common/robot_performance</input_port>
+            <input_port name="self_color" type="dji_referee_protocol::msg::SelfColor_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_selfColor}">SelfColor</input_port>
+            <input_port name="constraints" type="dji_referee_protocol::msg::Constraints_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_constraints}">Constraints</input_port>
+            <input_port name="damage_state" type="dji_referee_protocol::msg::DamageState_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_damageState}">DamageState</input_port>
+            <input_port name="rfid_status" type="dji_referee_protocol::msg::RFIDStatus_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_rfidStatus}">RFIDStatus</input_port>
+            <input_port name="allowed_shoot" type="dji_referee_protocol::msg::AllowedShoot_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_allowedShoot}">AllowedShoot</input_port>
+            <input_port name="robot_buff" type="dji_referee_protocol::msg::RobotBuff_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_robotBuff}">RobotBuff</input_port>
+            <input_port name="robot_heat" type="dji_referee_protocol::msg::RobotHeat_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_robotHeat}">RobotHeat</input_port>
+            <input_port name="robot_position" type="dji_referee_protocol::msg::RobotPosition_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_robotPosition}">RobotPosition</input_port>
+            <input_port name="robot_performance" type="dji_referee_protocol::msg::RobotPerformance_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_robotPerformance}">RobotPerformance</input_port>
+            <input_port name="ground_robot_position" type="dji_referee_protocol::msg::GroundRobotPosition_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_groundRobotPosition}">GroundRobotPosition</input_port>
+            <input_port name="robot_hp" type="dji_referee_protocol::msg::RobotHP_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_robotHP}">RobotHP</input_port>
+            <input_port name="field_event" type="dji_referee_protocol::msg::FieldEvent_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_fieldEvent}">FieldEvent</input_port>
+            <input_port name="game_status" type="dji_referee_protocol::msg::GameStatus_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_gameStatus}">GameStatus</input_port>
         </Action>
         <Condition ID="PubNav2Goal">
             <input_port name="goal" type="geometry_msgs::msg::PoseStamped_&lt;std::allocator&lt;void&gt; &gt;" default="0;0;0">Expected goal pose that send to nav2. Fill with format `x;y;yaw`</input_port>
             <input_port name="topic_name" type="std::string" default="__default__placeholder__">Topic name</input_port>
         </Condition>
+        <Action ID="PublishAutoAim">
+            <input_port name="duration" type="std::chrono::milliseconds" default="">Publish then sleep duration in milliseconds</input_port>
+            <input_port name="value" type="int" default="0">Auto-aim switch value (0=off, 1=on)</input_port>
+            <input_port name="topic_name" type="std::string" default="__default__placeholder__">Topic name</input_port>
+        </Action>
         <Action ID="PublishGimbalAbsolute">
             <input_port name="topic_name" type="std::string" default="__default__placeholder__">Topic name</input_port>
             <input_port name="duration" type="std::chrono::milliseconds">Publish duration</input_port>

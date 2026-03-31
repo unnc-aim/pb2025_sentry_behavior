@@ -18,7 +18,19 @@
 #include <string>
 
 #include "behaviortree_cpp/action_node.h"
+#include "dji_referee_protocol/msg/allowed_shoot.hpp"
+#include "dji_referee_protocol/msg/constraints.hpp"
+#include "dji_referee_protocol/msg/damage_state.hpp"
+#include "dji_referee_protocol/msg/field_event.hpp"
+#include "dji_referee_protocol/msg/game_status.hpp"
+#include "dji_referee_protocol/msg/ground_robot_position.hpp"
+#include "dji_referee_protocol/msg/rfid_status.hpp"
+#include "dji_referee_protocol/msg/robot_buff.hpp"
+#include "dji_referee_protocol/msg/robot_heat.hpp"
+#include "dji_referee_protocol/msg/robot_hp.hpp"
 #include "dji_referee_protocol/msg/robot_performance.hpp"
+#include "dji_referee_protocol/msg/robot_position.hpp"
+#include "dji_referee_protocol/msg/self_color.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace pb2025_sentry_behavior

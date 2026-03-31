@@ -82,6 +82,9 @@ list(APPEND plugin_libs calculate_attack_pose)
 ament_auto_add_library(print_referee_status SHARED plugins/action/print_referee_status.cpp)
 list(APPEND plugin_libs print_referee_status)
 
+ament_auto_add_library(pub_auto_aim SHARED plugins/action/pub_auto_aim.cpp)
+list(APPEND plugin_libs pub_auto_aim)
+
 ####### Controls #######
 ament_auto_add_library(recovery_node SHARED plugins/control/recovery_node.cpp)
 list(APPEND plugin_libs recovery_node)

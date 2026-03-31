@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4">
+
+  <!-- ============================== -->
+  <!-- Subtree: check_game_start      -->
+  <!-- Checks if game is running or   -->
+  <!-- manual start is triggered.     -->
+  <!-- If neither, stops the robot.   -->
+  <!-- ============================== -->
   <BehaviorTree ID="check_game_start">
     <Fallback>
       <IsGameStatus name="IsGameStart"
@@ -12,63 +19,189 @@
       <ForceFailure>
         <Sequence>
           <PublishSpinSpeed spin_speed="0.0"
-                            duration="0.0"
+                            duration="0"
                             topic_name="cmd_spin"/>
           <PublishTwist v_y="0.0"
                         v_yaw="0.0"
                         v_x="0.0"
-                        duration="0.0"
+                        duration="0"
                         topic_name="cmd_vel"/>
+          <PublishAutoAim value="0"
+                          duration="0"
+                          topic_name="auto_aim_switch"/>
         </Sequence>
       </ForceFailure>
     </Fallback>
   </BehaviorTree>
 
-  <BehaviorTree ID="navigate_with_retreat">
-    <Fallback>
-      <Sequence>
-        <IsStatusOK ammo_min="0"
-                    heat_max="350"
-                    hp_min="200"
-                    hp_port="{@referee_robotPerformance}"
-                    heat_port="{@referee_robotHeat}"
-                    ammo_port="{@referee_allowedShoot}"/>
-        <NavigateGoalPose goal="1;0;0"
-                          topic_name="goal_pose"
-                          map_frame="map"
-                          base_frame="base_footprint"
-                          position_tolerance="0.25"
-                          yaw_tolerance="0.35"/>
-      </Sequence>
-      <Sequence>
-        <NavigateGoalPose goal="0;0;0"
-                          topic_name="goal_pose"
-                          map_frame="map"
-                          base_frame="base_footprint"
-                          position_tolerance="0.25"
-                          yaw_tolerance="0.35"/>
-        <Sleep msec="10000"/>
-        <NavigateGoalPose goal="1;0;0"
-                          topic_name="goal_pose"
-                          map_frame="map"
-                          base_frame="base_footprint"
-                          position_tolerance="0.25"
-                          yaw_tolerance="0.35"/>
-      </Sequence>
-    </Fallback>
+  <!-- ============================== -->
+  <!-- Subtree: patrol_path           -->
+  <!-- Navigate: start -> (7,0) ->   -->
+  <!--   (7,2.5) -> (5,2.5)          -->
+  <!-- Large tolerance on waypoints   -->
+  <!-- for continuous motion.         -->
+  <!-- ============================== -->
+  <BehaviorTree ID="patrol_path">
+    <Sequence>
+      <NavigateGoalPose goal="7;0;0"
+                        topic_name="goal_pose"
+                        map_frame="map"
+                        base_frame="base_footprint"
+                        position_tolerance="1.0"
+                        yaw_tolerance="6.28"/>
+      <NavigateGoalPose goal="7;2.5;0"
+                        topic_name="goal_pose"
+                        map_frame="map"
+                        base_frame="base_footprint"
+                        position_tolerance="1.0"
+                        yaw_tolerance="6.28"/>
+      <NavigateGoalPose goal="5;2.5;0"
+                        topic_name="goal_pose"
+                        map_frame="map"
+                        base_frame="base_footprint"
+                        position_tolerance="0.25"
+                        yaw_tolerance="0.35"/>
+    </Sequence>
   </BehaviorTree>
 
+  <!-- ============================== -->
+  <!-- Subtree: scan_until_hp_low     -->
+  <!-- At destination (5,2.5):        -->
+  <!--   - Enable auto-aim            -->
+  <!--   - Start gimbal 180° scan     -->
+  <!--   - Keep running until HP low  -->
+  <!-- ============================== -->
+  <BehaviorTree ID="scan_until_hp_low">
+    <Sequence>
+      <!-- Enable auto-aim -->
+      <PublishAutoAim value="1"
+                      duration="0"
+                      topic_name="auto_aim_switch"/>
+      <!-- Keep scanning until HP drops below threshold -->
+      <ForceSuccess>
+        <ReactiveSequence>
+          <IsStatusOK ammo_min="0"
+                      heat_max="9999"
+                      hp_min="200"
+                      hp_port="{@referee_robotPerformance}"
+                      heat_port="{@referee_robotHeat}"
+                      ammo_port="{@referee_allowedShoot}"/>
+          <KeepRunningUntilFailure>
+            <Sequence>
+              <!-- Re-publish gimbal scan command periodically -->
+              <PublishGimbalVelocity gimbal_vel_yaw="1.0"
+                                     gimbal_vel_pitch="0.0"
+                                     yaw_min="-3.14159"
+                                     yaw_max="0.0"
+                                     pitch_min="-0.5"
+                                     pitch_max="0.5"
+                                     duration="0"
+                                     topic_name="gimbal_scan_cmd"/>
+              <!-- Re-publish auto-aim command periodically -->
+              <PublishAutoAim value="1"
+                              duration="0"
+                              topic_name="auto_aim_switch"/>
+              <Sleep msec="2000"/>
+            </Sequence>
+          </KeepRunningUntilFailure>
+        </ReactiveSequence>
+      </ForceSuccess>
+      <!-- HP is low now, reaching here means we should retreat -->
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- ============================== -->
+  <!-- Subtree: retreat_and_recover   -->
+  <!-- Disable scan, retreat to base, -->
+  <!-- wait for HP recovery.          -->
+  <!-- Path: (7,2.5)->(7,0)->(0,0)   -->
+  <!-- ============================== -->
+  <BehaviorTree ID="retreat_and_recover">
+    <Sequence>
+      <!-- Disable auto-aim -->
+      <PublishAutoAim value="0"
+                      duration="0"
+                      topic_name="auto_aim_switch"/>
+      <!-- Stop gimbal scan -->
+      <PublishGimbalVelocity gimbal_vel_yaw="0.0"
+                             gimbal_vel_pitch="0.0"
+                             yaw_min="-3.14159"
+                             yaw_max="3.14159"
+                             pitch_min="-1.57"
+                             pitch_max="1.57"
+                             duration="0"
+                             topic_name="gimbal_scan_cmd"/>
+      <!-- Retreat: continuous path back to base -->
+      <NavigateGoalPose goal="7;2.5;0"
+                        topic_name="goal_pose"
+                        map_frame="map"
+                        base_frame="base_footprint"
+                        position_tolerance="1.0"
+                        yaw_tolerance="6.28"/>
+      <NavigateGoalPose goal="7;0;0"
+                        topic_name="goal_pose"
+                        map_frame="map"
+                        base_frame="base_footprint"
+                        position_tolerance="1.0"
+                        yaw_tolerance="6.28"/>
+      <NavigateGoalPose goal="0;0;0"
+                        topic_name="goal_pose"
+                        map_frame="map"
+                        base_frame="base_footprint"
+                        position_tolerance="0.25"
+                        yaw_tolerance="0.35"/>
+      <!-- Stop movement at base -->
+      <PublishTwist v_x="0.0"
+                    v_y="0.0"
+                    v_yaw="0.0"
+                    duration="0"
+                    topic_name="cmd_vel"/>
+      <!-- Wait for HP recovery (hp >= 300) -->
+      <RetryUntilSuccessful num_attempts="-1">
+        <Sequence>
+          <Sleep msec="1000"/>
+          <IsStatusOK ammo_min="0"
+                      heat_max="9999"
+                      hp_min="300"
+                      hp_port="{@referee_robotPerformance}"
+                      heat_port="{@referee_robotHeat}"
+                      ammo_port="{@referee_allowedShoot}"/>
+        </Sequence>
+      </RetryUntilSuccessful>
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- ============================== -->
+  <!-- Subtree: navigate_with_retreat -->
+  <!-- Full mission cycle:            -->
+  <!--   1) Patrol to (5,2.5)         -->
+  <!--   2) Scan + auto-aim           -->
+  <!--   3) Retreat when HP low       -->
+  <!--   4) Recover, then repeat      -->
+  <!-- ============================== -->
+  <BehaviorTree ID="navigate_with_retreat">
+    <Sequence>
+      <SubTree ID="patrol_path"/>
+      <SubTree ID="scan_until_hp_low"/>
+      <SubTree ID="retreat_and_recover"/>
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- ============================== -->
+  <!-- Main tree: rmul_2025_reality   -->
+  <!-- ============================== -->
   <BehaviorTree ID="rmul_2025_reality">
     <KeepRunningUntilFailure>
       <ForceSuccess>
         <ReactiveSequence>
           <SubTree ID="check_game_start"/>
           <PublishSpinSpeed spin_speed="7.0"
-                            duration="0.0"
+                            duration="0"
                             topic_name="cmd_spin"/>
           <SubTree ID="navigate_with_retreat"/>
         </ReactiveSequence>
       </ForceSuccess>
     </KeepRunningUntilFailure>
   </BehaviorTree>
+
 </root>

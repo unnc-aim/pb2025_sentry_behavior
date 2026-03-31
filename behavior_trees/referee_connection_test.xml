@@ -3,7 +3,7 @@
   <BehaviorTree ID="referee_connection_test">
     <Repeat num_cycles="-1">
       <Sequence>
-        <PrintRefereeStatus robot_performance="{@referee_robot_performance}"/>
+        <PrintRefereeStatus/>
         <Sleep msec="1000"/>
       </Sequence>
     </Repeat>

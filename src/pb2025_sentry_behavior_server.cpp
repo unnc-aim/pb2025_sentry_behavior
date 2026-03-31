@@ -30,7 +30,9 @@
 #include "dji_referee_protocol/msg/robot_heat.hpp"
 #include "dji_referee_protocol/msg/robot_hp.hpp"
 #include "dji_referee_protocol/msg/robot_performance.hpp"
+#include "dji_referee_protocol/msg/constraints.hpp"
 #include "dji_referee_protocol/msg/robot_position.hpp"
+#include "dji_referee_protocol/msg/self_color.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "std_msgs/msg/int32.hpp"
 namespace pb2025_sentry_behavior
@@ -73,6 +75,12 @@ SentryBehaviorServer::SentryBehaviorServer(const rclcpp::NodeOptions & options)
     "/referee/common/robot_buff", "referee_robotBuff");
   subscribe<dji_referee_protocol::msg::GroundRobotPosition>(
     "/referee/common/ground_robot_position", "referee_groundRobotPosition");
+
+  // Parsed referee topics
+  subscribe<dji_referee_protocol::msg::Constraints>(
+    "/referee/parsed/common/constraints", "referee_constraints");
+  subscribe<dji_referee_protocol::msg::SelfColor>(
+    "/referee/parsed/common/self_color", "referee_selfColor");
 
   // DamageState: custom callback with latch (visible for exactly one BT tick)
   auto damage_sub = node()->create_subscription<dji_referee_protocol::msg::DamageState>(
