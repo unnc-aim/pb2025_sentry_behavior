@@ -85,6 +85,9 @@ list(APPEND plugin_libs print_referee_status)
 ament_auto_add_library(pub_auto_aim SHARED plugins/action/pub_auto_aim.cpp)
 list(APPEND plugin_libs pub_auto_aim)
 
+ament_auto_add_library(send_nav2_through_poses SHARED plugins/action/send_nav2_through_poses.cpp)
+list(APPEND plugin_libs send_nav2_through_poses)
+
 ####### Controls #######
 ament_auto_add_library(recovery_node SHARED plugins/control/recovery_node.cpp)
 list(APPEND plugin_libs recovery_node)

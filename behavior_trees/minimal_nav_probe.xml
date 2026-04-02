@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+
+  <!-- ========================================= -->
+  <!-- minimal_nav_probe                         -->
+  <!-- Diagnostic tree: forward ~0.5m, wait 5s,  -->
+  <!-- return to origin, repeat forever.         -->
+  <!-- Uses SendNav2Goal (navigate_to_pose)      -->
+  <!-- and SendNav2ThroughPoses to exercise both -->
+  <!-- Nav2 action interfaces.                   -->
+  <!-- ========================================= -->
+
+  <!-- ============================== -->
+  <!-- Phase 1: go forward 0.5 m     -->
+  <!-- ============================== -->
+  <BehaviorTree ID="go_forward">
+    <SendNav2Goal goal="0.5;0;0"
+                  action_name="navigate_to_pose"/>
+  </BehaviorTree>
+
+  <!-- ============================== -->
+  <!-- Phase 2: wait 5 seconds        -->
+  <!-- ============================== -->
+  <BehaviorTree ID="wait_at_goal">
+    <Sleep msec="5000"/>
+  </BehaviorTree>
+
+  <!-- ============================== -->
+  <!-- Phase 3: return to origin      -->
+  <!-- Uses SendNav2ThroughPoses to   -->
+  <!-- exercise that code path too.   -->
+  <!-- ============================== -->
+  <BehaviorTree ID="go_back">
+    <SendNav2ThroughPoses goals="0;0;0"
+                          action_name="navigate_through_poses"/>
+  </BehaviorTree>
+
+  <!-- ============================== -->
+  <!-- Phase 4: wait at origin        -->
+  <!-- ============================== -->
+  <BehaviorTree ID="wait_at_origin">
+    <Sleep msec="5000"/>
+  </BehaviorTree>
+
+  <!-- ========================================= -->
+  <!-- Main tree: minimal_nav_probe              -->
+  <!-- ========================================= -->
+  <BehaviorTree ID="minimal_nav_probe">
+    <KeepRunningUntilFailure>
+      <Sequence>
+        <SubTree ID="go_forward"/>
+        <SubTree ID="wait_at_goal"/>
+        <SubTree ID="go_back"/>
+        <SubTree ID="wait_at_origin"/>
+      </Sequence>
+    </KeepRunningUntilFailure>
+  </BehaviorTree>
+
+</root>

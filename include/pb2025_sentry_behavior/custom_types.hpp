@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef PB2025_SENTRY_BEHAVIOR__CUSTOM_TYPES_HPP_
+#define PB2025_SENTRY_BEHAVIOR__CUSTOM_TYPES_HPP_
+
 #include "behaviortree_cpp/bt_factory.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
-#ifndef PB2025_SENTRY_BEHAVIOR__CUSTOM_TYPES_HPP_
-#define PB2025_SENTRY_BEHAVIOR__CUSTOM_TYPES_HPP_
-
 namespace BT
 {
 template <>
-geometry_msgs::msg::PoseStamped convertFromString(StringView key)
+inline geometry_msgs::msg::PoseStamped convertFromString(StringView key)
 {
   auto parts = BT::splitString(key, ';');
   if (parts.size() == 7) {

@@ -3,7 +3,7 @@ pb2025_sentry_behavior_server:
     use_sim_time: true
     action_name: pb2025_sentry_behavior         # Optional
     tick_frequency: 5                          # Optional (defaults to 100 Hz)
-    groot2_port: 1667                           # Optional (defaults to 1667)
+    groot2_port: 0                           # Optional (defaults to 1667)
     ros_plugins_timeout: 1000                   # Optional (defaults 1000 ms)
     use_cout_logger: false                      # Optional (defaults to false)
 

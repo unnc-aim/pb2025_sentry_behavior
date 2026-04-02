@@ -41,8 +41,8 @@ BT::NodeStatus IsRfidDetectedCondition::checkRfidStatus()
     friendly_supply_zone_exchange, center_gain_point;
   auto msg = getInput<dji_referee_protocol::msg::RFIDStatus>("key_port");
   if (!msg) {
-    return BT::NodeStatus::FAILURE;
     RCLCPP_ERROR(logger_, "RFIDStatus message is not available");
+    return BT::NodeStatus::FAILURE;
   }
 
   // Decode bits (indices from Python translator)

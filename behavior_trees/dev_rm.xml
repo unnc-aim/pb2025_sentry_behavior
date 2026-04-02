@@ -1,7 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4">
+
+  <!-- ============================== -->
+  <!-- Subtree: gimbal_init           -->
+  <!-- Spin gimbal full circle twice  -->
+  <!-- with 5s pause in between.      -->
+  <!-- ============================== -->
+  <BehaviorTree ID="gimbal_init">
+    <Sequence>
+      <!-- First full circle at moderate speed -->
+      <PublishGimbalVelocity gimbal_vel_yaw="0.5"
+                             gimbal_vel_pitch="0.0"
+                             yaw_min="-3.14159"
+                             yaw_max="3.14159"
+                             pitch_min="-0.5"
+                             pitch_max="0.5"
+                             duration="13000"
+                             topic_name="gimbal_scan_cmd"/>
+      <!-- Pause 5 seconds -->
+      <Sleep msec="5000"/>
+      <!-- Second full circle -->
+      <PublishGimbalVelocity gimbal_vel_yaw="0.5"
+                             gimbal_vel_pitch="0.0"
+                             yaw_min="-3.14159"
+                             yaw_max="3.14159"
+                             pitch_min="-0.5"
+                             pitch_max="0.5"
+                             duration="13000"
+                             topic_name="gimbal_scan_cmd"/>
+      <!-- Log gimbal init success -->
+      <PrintRefereeStatus/>
+    </Sequence>
+  </BehaviorTree>
+
   <BehaviorTree ID="rmul_supply">
-    <WhileDoElse>
+    <Sequence>
+      <SubTree ID="gimbal_init"/>
+      <WhileDoElse>
       <IsRfidDetected friendly_supply_zone_exchange="false"
                       friendly_supply_zone_non_exchange="true"
                       center_gain_point="false"
@@ -21,10 +56,13 @@
         <Sleep msec="500"/>
       </Sequence>
     </WhileDoElse>
+    </Sequence>
   </BehaviorTree>
 
   <BehaviorTree ID="test_attack_pose">
-    <KeepRunningUntilFailure>
+    <Sequence>
+      <SubTree ID="gimbal_init"/>
+      <KeepRunningUntilFailure>
       <ForceSuccess>
         <Sequence>
           <CalculateAttackPose costmap_port="{@nav_globalCostmap}"
@@ -36,10 +74,13 @@
         </Sequence>
       </ForceSuccess>
     </KeepRunningUntilFailure>
+    </Sequence>
   </BehaviorTree>
 
   <BehaviorTree ID="test_attacked_feedback">
-    <KeepRunningUntilFailure>
+    <Sequence>
+      <SubTree ID="gimbal_init"/>
+      <KeepRunningUntilFailure>
       <WhileDoElse>
         <IsAttacked gimbal_yaw="{gimbal_yaw}"
                     gimbal_pitch="{gimbal_pitch}"
@@ -68,29 +109,38 @@
         <AlwaysSuccess/>
       </WhileDoElse>
     </KeepRunningUntilFailure>
+    </Sequence>
   </BehaviorTree>
 
   <BehaviorTree ID="test_gimbal_absolute">
-    <PublishGimbalAbsolute topic_name="cmd_gimbal"
-                           duration="5.0"
-                           gimbal_yaw="-1.57"
-                           gimbal_pitch="1.0"/>
+    <Sequence>
+      <SubTree ID="gimbal_init"/>
+      <PublishGimbalAbsolute topic_name="cmd_gimbal"
+                             duration="5.0"
+                             gimbal_yaw="-1.57"
+                             gimbal_pitch="1.0"/>
+    </Sequence>
   </BehaviorTree>
 
   <BehaviorTree ID="test_gimbal_velocity">
-    <PublishGimbalVelocity duration="5.0"
-                           yaw_min="-1.57"
-                           pitch_min="-0.3"
-                           yaw_max="1.57"
-                           pitch_max="0.3"
-                           gimbal_vel_yaw="1.5"
-                           topic_name="cmd_gimbal"
-                           gimbal_vel_pitch="1.0"/>
+    <Sequence>
+      <SubTree ID="gimbal_init"/>
+      <PublishGimbalVelocity duration="5.0"
+                             yaw_min="-1.57"
+                             pitch_min="-0.3"
+                             yaw_max="1.57"
+                             pitch_max="0.3"
+                             gimbal_vel_yaw="1.5"
+                             topic_name="cmd_gimbal"
+                             gimbal_vel_pitch="1.0"/>
+    </Sequence>
   </BehaviorTree>
 
   <BehaviorTree ID="test_go_to_supply">
-    <Repeat num_cycles="-1">
-      <WhileDoElse>
+    <Sequence>
+      <SubTree ID="gimbal_init"/>
+      <Repeat num_cycles="-1">
+        <WhileDoElse>
         <IsStatusOK ammo_min="0"
                     heat_max="350"
                     hp_min="350"
@@ -105,10 +155,13 @@
         <SubTree ID="rmul_supply"/>
       </WhileDoElse>
     </Repeat>
+    </Sequence>
   </BehaviorTree>
 
   <BehaviorTree ID="test_is_detect_enemy">
-    <ReactiveFallback>
+    <Sequence>
+      <SubTree ID="gimbal_init"/>
+      <ReactiveFallback>
       <Inverter>
         <IsDetectEnemy armor_id="1;2;3;4;5;7"
                        max_distance="8.0"
@@ -120,6 +173,7 @@
                     duration="3000"
                     topic_name="cmd_vel"/>
     </ReactiveFallback>
+    </Sequence>
   </BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->

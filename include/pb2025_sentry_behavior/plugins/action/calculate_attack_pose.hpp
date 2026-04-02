@@ -83,6 +83,7 @@ private:
   Parameters params_;
 
   PointStamped enemy_on_costmap_;
+  bool has_enemy_position_{false};
 };
 
 }  // namespace pb2025_sentry_behavior

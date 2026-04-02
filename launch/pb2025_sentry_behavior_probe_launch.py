@@ -1,8 +1,15 @@
 import os
+from datetime import datetime
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
+from launch.actions import (
+    DeclareLaunchArgument,
+    GroupAction,
+    LogInfo,
+    SetEnvironmentVariable,
+    TimerAction,
+)
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node, PushRosNamespace, SetRemap
 from launch_ros.descriptions import ParameterFile
@@ -11,6 +18,14 @@ from nav2_common.launch import RewrittenYaml
 
 def generate_launch_description():
     bringup_dir = get_package_share_directory("pb2025_sentry_behavior")
+
+    # Create a timestamped log directory for this probe session
+    log_dir = os.path.join(
+        os.path.expanduser("~"),
+        "sentry_probe_logs",
+        datetime.now().strftime("%Y%m%d_%H%M%S"),
+    )
+    os.makedirs(log_dir, exist_ok=True)
 
     namespace = LaunchConfiguration("namespace")
     use_sim_time = LaunchConfiguration("use_sim_time")
@@ -32,13 +47,10 @@ def generate_launch_description():
     stdout_linebuf_envvar = SetEnvironmentVariable(
         "RCUTILS_LOGGING_BUFFERED_STREAM", "1"
     )
-    colorized_output_envvar = SetEnvironmentVariable(
-        "RCUTILS_COLORIZED_OUTPUT", "1")
+    colorized_output_envvar = SetEnvironmentVariable("RCUTILS_COLORIZED_OUTPUT", "1")
 
     declare_namespace_cmd = DeclareLaunchArgument(
-        "namespace",
-        default_value="",
-        description="Top-level namespace",
+        "namespace", default_value="", description="Top-level namespace"
     )
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         "use_sim_time",
@@ -48,11 +60,16 @@ def generate_launch_description():
     declare_params_file_cmd = DeclareLaunchArgument(
         "params_file",
         default_value=os.path.join(
-            bringup_dir, "params", "sentry_behavior_debug.yaml"),
-        description="Full path to the ROS2 parameters file to use for all launched nodes (no referee)",
+            bringup_dir, "params", "sentry_behavior_probe.yaml"
+        ),
+        description="Params for probe run",
     )
     declare_log_level_cmd = DeclareLaunchArgument(
         "log_level", default_value="info", description="log level"
+    )
+
+    log_info_action = LogInfo(
+        msg=["[PROBE] Logs will be saved to: ", log_dir],
     )
 
     bringup_cmd_group = GroupAction(
@@ -64,17 +81,25 @@ def generate_launch_description():
                 package="pb2025_sentry_behavior",
                 executable="pb2025_sentry_behavior_server",
                 name="pb2025_sentry_behavior_server",
-                output="screen",
+                output="both",
                 parameters=[configured_params],
                 arguments=["--ros-args", "--log-level", log_level],
+                additional_env={"ROS_LOG_DIR": log_dir},
             ),
-            Node(
-                package="pb2025_sentry_behavior",
-                executable="pb2025_sentry_behavior_client",
-                name="pb2025_sentry_behavior_client",
-                output="screen",
-                parameters=[configured_params],
-                arguments=["--ros-args", "--log-level", log_level],
+            # Delay client start by 3 seconds to let server fully initialize
+            TimerAction(
+                period=3.0,
+                actions=[
+                    Node(
+                        package="pb2025_sentry_behavior",
+                        executable="pb2025_sentry_behavior_client",
+                        name="pb2025_sentry_behavior_client",
+                        output="both",
+                        parameters=[configured_params],
+                        arguments=["--ros-args", "--log-level", log_level],
+                        additional_env={"ROS_LOG_DIR": log_dir},
+                    ),
+                ],
             ),
         ]
     )
@@ -86,5 +111,6 @@ def generate_launch_description():
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_log_level_cmd)
+    ld.add_action(log_info_action)
     ld.add_action(bringup_cmd_group)
     return ld

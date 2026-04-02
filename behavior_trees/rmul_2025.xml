@@ -49,12 +49,14 @@
       <ForceSuccess>
         <ReactiveSequence>
           <SubTree ID="check_game_start"/>
-          <PublishSpinSpeed spin_speed="7.0"
-                            duration="0.0"
-                            topic_name="cmd_spin"/>
           <SubTree ID="check_robot_status"/>
-          <PubNav2Goal goal="5.18;2.5;0"
-                       topic_name="goal_pose"/>
+          <Sequence>
+            <PublishSpinSpeed spin_speed="7.0"
+                              duration="0.0"
+                              topic_name="cmd_spin"/>
+            <PubNav2Goal goal="5.18;2.5;0"
+                         topic_name="goal_pose"/>
+          </Sequence>
         </ReactiveSequence>
       </ForceSuccess>
     </KeepRunningUntilFailure>

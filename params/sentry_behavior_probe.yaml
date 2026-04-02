@@ -4,8 +4,8 @@ pb2025_sentry_behavior_server:
     action_name: pb2025_sentry_behavior
     tick_frequency: 5
     groot2_port: 0
-    ros_plugins_timeout: 1000
-    use_cout_logger: false
+    ros_plugins_timeout: 10000
+    use_cout_logger: true
 
     plugins:
       - pb2025_sentry_behavior/bt_plugins
@@ -16,4 +16,4 @@ pb2025_sentry_behavior_server:
 pb2025_sentry_behavior_client:
   ros__parameters:
     use_sim_time: false
-    target_tree: referee_connection_test
+    target_tree: minimal_nav_probe

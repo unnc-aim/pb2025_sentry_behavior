@@ -89,13 +89,11 @@ bool CalculateAttackPoseAction::setMessage(visualization_msgs::msg::MarkerArray 
     RCLCPP_INFO(
       node_->get_logger(),
       "Tracker target is not currently being tracked. Directing to last known position.");
-    if (enemy_on_costmap_.point.x == 0 && enemy_on_costmap_.point.y == 0) {
+    if (!has_enemy_position_) {
       RCLCPP_WARN(node_->get_logger(), "No last known position to direct to.");
       return false;
     }
-    PoseStamped pose;
-    pose.pose.position = enemy_on_costmap_.point;
-    setOutput("goal", pose);
+    setOutput("goal", createAttackPose(enemy_on_costmap_.point, enemy_on_costmap_));
   } else {
     // Transform enemy position
     PointStamped enemy_point;
@@ -107,6 +105,7 @@ bool CalculateAttackPoseAction::setMessage(visualization_msgs::msg::MarkerArray 
       RCLCPP_ERROR(node_->get_logger(), "Failed to transform enemy position");
       return false;
     }
+    has_enemy_position_ = true;
 
     // Generate candidate points
     candidates = generateCandidatePoints(enemy_on_costmap_.point);

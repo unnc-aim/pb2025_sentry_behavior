@@ -1,11 +1,50 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4">
-  <BehaviorTree ID="referee_connection_test">
-    <Repeat num_cycles="-1">
-      <Sequence>
-        <PrintRefereeStatus/>
-        <Sleep msec="1000"/>
-      </Sequence>
-    </Repeat>
+
+  <!-- ============================== -->
+  <!-- Subtree: gimbal_init           -->
+  <!-- Spin gimbal full circle twice  -->
+  <!-- with 5s pause in between.      -->
+  <!-- ============================== -->
+  <BehaviorTree ID="gimbal_init">
+    <Sequence>
+      <!-- First full circle at moderate speed -->
+      <PublishGimbalVelocity gimbal_vel_yaw="0.5"
+                             gimbal_vel_pitch="0.0"
+                             yaw_min="-3.14159"
+                             yaw_max="3.14159"
+                             pitch_min="-0.5"
+                             pitch_max="0.5"
+                             duration="13000"
+                             topic_name="gimbal_scan_cmd"/>
+      <!-- Pause 5 seconds -->
+      <Sleep msec="5000"/>
+      <!-- Second full circle -->
+      <PublishGimbalVelocity gimbal_vel_yaw="0.5"
+                             gimbal_vel_pitch="0.0"
+                             yaw_min="-3.14159"
+                             yaw_max="3.14159"
+                             pitch_min="-0.5"
+                             pitch_max="0.5"
+                             duration="13000"
+                             topic_name="gimbal_scan_cmd"/>
+      <!-- Log gimbal init success -->
+      <PrintRefereeStatus/>
+    </Sequence>
   </BehaviorTree>
+
+  <BehaviorTree ID="referee_connection_test">
+    <Sequence>
+      <!-- Gimbal initialization (runs once) -->
+      <SubTree ID="gimbal_init"/>
+      <!-- Main loop -->
+      <Repeat num_cycles="-1">
+        <Sequence>
+          <PrintRefereeStatus/>
+          <Sleep msec="1000"/>
+        </Sequence>
+      </Repeat>
+    </Sequence>
+  </BehaviorTree>
+
 </root>

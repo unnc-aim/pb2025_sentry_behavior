@@ -13,7 +13,14 @@ pb2025_sentry_behavior_server:
     behavior_trees:
       - pb2025_sentry_behavior/behavior_trees
 
+    CalculateAttackPose:
+      attack_radius: 2.0
+      num_sectors: 36
+      cost_threshold: 50
+      robot_base_frame: chassis
+      visualize: true
+
 pb2025_sentry_behavior_client:
   ros__parameters:
     use_sim_time: false
-    target_tree: referee_connection_test
+    target_tree: rmul_2025_referee_debug

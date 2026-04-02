@@ -48,8 +48,8 @@ def generate_launch_description():
     declare_params_file_cmd = DeclareLaunchArgument(
         "params_file",
         default_value=os.path.join(
-            bringup_dir, "params", "sentry_behavior_debug.yaml"),
-        description="Full path to the ROS2 parameters file to use for all launched nodes (no referee)",
+            bringup_dir, "params", "sentry_behavior_referee_debug.yaml"),
+        description="Full path to the ROS2 parameters file to use for all launched nodes",
     )
     declare_log_level_cmd = DeclareLaunchArgument(
         "log_level", default_value="info", description="log level"

@@ -25,15 +25,14 @@ PublishGimbalVelocity::PublishGimbalVelocity(
 
 BT::PortsList PublishGimbalVelocity::providedPorts()
 {
-  return {
+  return providedBasicPorts({
     BT::InputPort<float>("gimbal_vel_pitch", 0.0f, "Pitch velocity (rad/s)"),
     BT::InputPort<float>("gimbal_vel_yaw", 0.0f, "Yaw velocity (rad/s)"),
     BT::InputPort<float>("pitch_min", -1.57f, "Minimum pitch range"),
     BT::InputPort<float>("pitch_max", 1.57f, "Maximum pitch range"),
     BT::InputPort<float>("yaw_min", -3.14f, "Minimum yaw range"),
     BT::InputPort<float>("yaw_max", 3.14f, "Maximum yaw range"),
-    BT::InputPort<std::chrono::milliseconds>("duration", "Publish duration"),
-    BT::InputPort<std::string>("topic_name", "__default__placeholder__", "Topic name")};
+  });
 }
 
 bool PublishGimbalVelocity::setMessage(pb_rm_interfaces::msg::GimbalCmd & msg)

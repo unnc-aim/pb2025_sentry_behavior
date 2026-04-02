@@ -28,6 +28,10 @@ PubNav2GoalAction::PubNav2GoalAction(
 bool PubNav2GoalAction::setMessage(geometry_msgs::msg::PoseStamped & msg)
 {
   auto goal = getInput<geometry_msgs::msg::PoseStamped>("goal");
+  if (!goal) {
+    RCLCPP_ERROR(logger(), "Missing required input [goal]");
+    return false;
+  }
 
   msg.header.stamp = now();
   msg.header.frame_id = "map";

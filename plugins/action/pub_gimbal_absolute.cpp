@@ -25,11 +25,10 @@ PublishGimbalAbsolute::PublishGimbalAbsolute(
 
 BT::PortsList PublishGimbalAbsolute::providedPorts()
 {
-  return {
+  return providedBasicPorts({
     BT::InputPort<float>("gimbal_pitch", "Expected Pitch angle (rad)"),
     BT::InputPort<float>("gimbal_yaw", "Expected Yaw angle (rad)"),
-    BT::InputPort<std::chrono::milliseconds>("duration", "Publish duration"),
-    BT::InputPort<std::string>("topic_name", "__default__placeholder__", "Topic name")};
+  });
 }
 
 bool PublishGimbalAbsolute::setMessage(pb_rm_interfaces::msg::GimbalCmd & msg)
