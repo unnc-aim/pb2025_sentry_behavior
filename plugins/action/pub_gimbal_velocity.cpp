@@ -73,6 +73,20 @@ bool PublishGimbalVelocity::setMessage(pb_rm_interfaces::msg::GimbalCmd & msg)
   return true;
 }
 
+bool PublishGimbalVelocity::setHaltMessage(pb_rm_interfaces::msg::GimbalCmd & msg)
+{
+  msg.header.stamp = node_->now();
+  msg.yaw_type = pb_rm_interfaces::msg::GimbalCmd::VELOCITY;
+  msg.pitch_type = pb_rm_interfaces::msg::GimbalCmd::VELOCITY;
+  msg.velocity.pitch = 0.0f;
+  msg.velocity.yaw = 0.0f;
+  msg.velocity.pitch_min_range = -1.57f;
+  msg.velocity.pitch_max_range = 1.57f;
+  msg.velocity.yaw_min_range = -3.14f;
+  msg.velocity.yaw_max_range = 3.14f;
+  return true;
+}
+
 }  // namespace pb2025_sentry_behavior
 
 #include "behaviortree_ros2/plugins.hpp"

@@ -34,6 +34,8 @@ public:
 
 protected:
   bool setMessage(pb_rm_interfaces::msg::GimbalCmd & msg) override;
+
+  bool setHaltMessage(pb_rm_interfaces::msg::GimbalCmd & msg) override;
 };
 
 }  // namespace pb2025_sentry_behavior

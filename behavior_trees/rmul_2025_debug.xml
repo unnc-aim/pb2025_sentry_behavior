@@ -1,35 +1,175 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4">
-  <BehaviorTree ID="debug_patrol_cycle">
+
+  <!-- ============================== -->
+  <!-- Subtree: check_game_start      -->
+  <!-- Debug: manual start only,      -->
+  <!-- no referee game status check.  -->
+  <!-- If not started, stops robot.   -->
+  <!-- ============================== -->
+  <BehaviorTree ID="check_game_start">
+    <Fallback>
+      <IsManualStart key_port="{@manual_start}"
+                     start_value="1"/>
+      <ForceFailure>
+        <Sequence>
+          <PublishSpinSpeed spin_speed="0.0"
+                            duration="0"
+                            topic_name="cmd_spin"/>
+          <PublishTwist v_y="0.0"
+                        v_yaw="0.0"
+                        v_x="0.0"
+                        duration="0"
+                        topic_name="cmd_vel"/>
+          <PublishAutoAim value="0"
+                          duration="0"
+                          topic_name="auto_aim_switch"/>
+        </Sequence>
+      </ForceFailure>
+    </Fallback>
+  </BehaviorTree>
+
+  <!-- ============================== -->
+  <!-- Subtree: patrol_path           -->
+  <!-- Navigate: start -> (7,0) ->   -->
+  <!--   (7,2.5) -> (5,2.5)          -->
+  <!-- Large tolerance on waypoints   -->
+  <!-- for continuous motion.         -->
+  <!-- ============================== -->
+  <BehaviorTree ID="patrol_path">
     <Sequence>
-      <NavigateGoalPose goal="1;1;0"
+      <NavigateGoalPose goal="7;0;0"
+                        topic_name="goal_pose"
+                        map_frame="map"
+                        base_frame="base_footprint"
+                        position_tolerance="1.0"
+                        yaw_tolerance="6.28"/>
+      <NavigateGoalPose goal="7;2.5;0"
+                        topic_name="goal_pose"
+                        map_frame="map"
+                        base_frame="base_footprint"
+                        position_tolerance="1.0"
+                        yaw_tolerance="6.28"/>
+      <NavigateGoalPose goal="5;2.5;0"
                         topic_name="goal_pose"
                         map_frame="map"
                         base_frame="base_footprint"
                         position_tolerance="0.25"
                         yaw_tolerance="0.35"/>
-      <Sleep msec="15000"/>
-      <NavigateGoalPose goal="0;0;0"
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- ============================== -->
+  <!-- Subtree: scan_until_timeout    -->
+  <!-- At destination (5,2.5):        -->
+  <!--   - Enable auto-aim            -->
+  <!--   - Start gimbal 180° scan     -->
+  <!--   - Run for 15s (timer replace -->
+  <!--     HP check from referee)     -->
+  <!-- ============================== -->
+  <BehaviorTree ID="scan_until_timeout">
+    <Sequence>
+      <!-- Enable auto-aim -->
+      <PublishAutoAim value="1"
+                      duration="0"
+                      topic_name="auto_aim_switch"/>
+      <!-- Scan for 15 seconds (replaces HP-based exit) -->
+      <ForceSuccess>
+        <Timeout msec="15000">
+          <KeepRunningUntilFailure>
+            <Sequence>
+              <!-- Re-publish gimbal scan command periodically -->
+              <PublishGimbalVelocity gimbal_vel_yaw="1.0"
+                                     gimbal_vel_pitch="0.0"
+                                     yaw_min="-3.14159"
+                                     yaw_max="0.0"
+                                     pitch_min="-0.5"
+                                     pitch_max="0.5"
+                                     duration="0"
+                                     topic_name="gimbal_scan_cmd"/>
+              <!-- Re-publish auto-aim command periodically -->
+              <PublishAutoAim value="1"
+                              duration="0"
+                              topic_name="auto_aim_switch"/>
+              <Sleep msec="2000"/>
+            </Sequence>
+          </KeepRunningUntilFailure>
+        </Timeout>
+      </ForceSuccess>
+      <!-- Timeout reached, proceed to retreat -->
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- ============================== -->
+  <!-- Subtree: retreat_and_recover   -->
+  <!-- Disable scan, advance 1m in x,-->
+  <!-- wait 15s (timer replaces HP    -->
+  <!-- recovery from referee).        -->
+  <!-- ============================== -->
+  <BehaviorTree ID="retreat_and_recover">
+    <Sequence>
+      <!-- Disable auto-aim -->
+      <PublishAutoAim value="0"
+                      duration="0"
+                      topic_name="auto_aim_switch"/>
+      <!-- Stop gimbal scan -->
+      <PublishGimbalVelocity gimbal_vel_yaw="0.0"
+                             gimbal_vel_pitch="0.0"
+                             yaw_min="-3.14159"
+                             yaw_max="3.14159"
+                             pitch_min="-1.57"
+                             pitch_max="1.57"
+                             duration="0"
+                             topic_name="gimbal_scan_cmd"/>
+      <!-- Retreat: 1m forward in x from (5,2.5) -->
+      <NavigateGoalPose goal="6;2.5;0"
                         topic_name="goal_pose"
                         map_frame="map"
                         base_frame="base_footprint"
                         position_tolerance="0.25"
                         yaw_tolerance="0.35"/>
+      <!-- Stop movement -->
+      <PublishTwist v_x="0.0"
+                    v_y="0.0"
+                    v_yaw="0.0"
+                    duration="0"
+                    topic_name="cmd_vel"/>
+      <!-- Wait 15 seconds (replaces HP recovery check) -->
       <Sleep msec="15000"/>
     </Sequence>
   </BehaviorTree>
 
+  <!-- ============================== -->
+  <!-- Subtree: navigate_with_retreat -->
+  <!-- Full debug cycle:              -->
+  <!--   1) Patrol to (5,2.5)         -->
+  <!--   2) Scan + auto-aim for 15s   -->
+  <!--   3) Retreat 1m + wait 15s     -->
+  <!--   4) Repeat                    -->
+  <!-- ============================== -->
+  <BehaviorTree ID="navigate_with_retreat">
+    <Sequence>
+      <SubTree ID="patrol_path"/>
+      <SubTree ID="scan_until_timeout"/>
+      <SubTree ID="retreat_and_recover"/>
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- ============================== -->
+  <!-- Main tree: rmul_2025_debug     -->
+  <!-- ============================== -->
   <BehaviorTree ID="rmul_2025_debug">
     <KeepRunningUntilFailure>
       <ForceSuccess>
-        <Sequence>
-          <IsManualStart key_port="{@manual_start}"
-                         start_value="1"/>
-          <Repeat num_cycles="-1">
-            <SubTree ID="debug_patrol_cycle"/>
-          </Repeat>
-        </Sequence>
+        <ReactiveSequence>
+          <SubTree ID="check_game_start"/>
+          <PublishSpinSpeed spin_speed="7.0"
+                            duration="0"
+                            topic_name="cmd_spin"/>
+          <SubTree ID="navigate_with_retreat"/>
+        </ReactiveSequence>
       </ForceSuccess>
     </KeepRunningUntilFailure>
   </BehaviorTree>
+
 </root>
