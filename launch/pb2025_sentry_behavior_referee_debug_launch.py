@@ -60,6 +60,7 @@ def generate_launch_description():
             PushRosNamespace(namespace=namespace),
             SetRemap("/tf", "tf"),
             SetRemap("/tf_static", "tf_static"),
+            SetRemap("cmd_vel", "cmd_vel_nav2_result"),
             Node(
                 package="pb2025_sentry_behavior",
                 executable="pb2025_sentry_behavior_server",

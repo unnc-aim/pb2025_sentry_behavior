@@ -36,19 +36,19 @@
 
   <!-- ============================== -->
   <!-- Subtree: patrol_path           -->
-  <!-- Navigate: start -> (7,0) ->   -->
-  <!--   (7,2.5) -> (5,2.5)          -->
+  <!-- Navigate: start -> (6,0) ->   -->
+  <!--   (6,5.25) -> (3,5.25)        -->
   <!-- Large tolerance on waypoints   -->
   <!-- for continuous motion.         -->
   <!-- ============================== -->
   <BehaviorTree ID="patrol_path">
-    <SendNav2ThroughPoses goals="7;0;0|7;2.5;0|5;2.5;0"
+    <SendNav2ThroughPoses goals="6;0;0|6;5.25;0|3;5.25;0"
                           action_name="navigate_through_poses"/>
   </BehaviorTree>
 
   <!-- ============================== -->
   <!-- Subtree: scan_until_hp_low     -->
-  <!-- At destination (5,2.5):        -->
+  <!-- At destination (3,5.25):       -->
   <!--   - Enable auto-aim            -->
   <!--   - Start gimbal 180° scan     -->
   <!--   - Keep running until HP low  -->
@@ -96,7 +96,7 @@
   <!-- Subtree: retreat_and_recover   -->
   <!-- Disable scan, retreat to base, -->
   <!-- wait for HP recovery.          -->
-  <!-- Path: (7,2.5)->(7,0)->(0,0)   -->
+  <!-- Path: (6,5.25)->(6,0)->(0,0)  -->
   <!-- ============================== -->
   <BehaviorTree ID="retreat_and_recover">
     <Sequence>
@@ -114,7 +114,7 @@
                              duration="0"
                              topic_name="gimbal_scan_cmd"/>
       <!-- Retreat: continuous path back to base -->
-      <SendNav2ThroughPoses goals="7;2.5;0|7;0;0|0;0;0"
+      <SendNav2ThroughPoses goals="6;5.25;0|6;0;0|0;0;0"
                             action_name="navigate_through_poses"/>
       <!-- Stop movement at base -->
       <PublishTwist v_x="0.0"
@@ -140,7 +140,7 @@
   <!-- ============================== -->
   <!-- Subtree: navigate_with_retreat -->
   <!-- Full mission cycle:            -->
-  <!--   1) Patrol to (5,2.5)         -->
+  <!--   1) Patrol to (3,5.25)        -->
   <!--   2) Scan + auto-aim           -->
   <!--   3) Retreat when HP low       -->
   <!--   4) Recover, then repeat      -->
@@ -170,7 +170,7 @@
                              duration="13000"
                              topic_name="gimbal_scan_cmd"/>
       <!-- Pause 5 seconds -->
-      <Sleep msec="5000"/>
+      <Sleep msec="2000"/>
       <!-- Second full circle -->
       <PublishGimbalVelocity gimbal_vel_yaw="0.5"
                              gimbal_vel_pitch="0.0"

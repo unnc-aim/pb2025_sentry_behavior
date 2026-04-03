@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+
+  <!-- ============================================================ -->
+  <!-- Main tree: mobility_test                                      -->
+  <!-- Comprehensive mobile test in limited space (no pre-built map) -->
+  <!--   - Back-and-forth navigation between two nearby waypoints    -->
+  <!--   - Continuous gimbal scanning (parallel)                     -->
+  <!--   - Spin test at each waypoint                                -->
+  <!--   - Auto-aim enabled during navigation                        -->
+  <!--   - Triggered by game_status or manual_start                  -->
+  <!-- ============================================================ -->
+
+  <!-- ============================== -->
+  <!-- Subtree: check_start           -->
+  <!-- ============================== -->
+  <BehaviorTree ID="check_start">
+    <Fallback>
+      <IsGameStatus name="IsGameStart"
+                    max_remain_time="420"
+                    min_remain_time="0"
+                    expected_game_progress="4"
+                    key_port="{@referee_gameStatus}"/>
+      <IsManualStart key_port="{@manual_start}"
+                     start_value="1"/>
+      <ForceFailure>
+        <PublishAutoAim value="0"
+                        duration="0"
+                        topic_name="auto_aim_switch"/>
+      </ForceFailure>
+    </Fallback>
+  </BehaviorTree>
+
+  <!-- ============================== -->
+  <!-- Subtree: nav_shuttle           -->
+  <!-- Shuttle between two waypoints  -->
+  <!-- with spin at each endpoint.    -->
+  <!-- ============================== -->
+  <BehaviorTree ID="nav_shuttle">
+    <KeepRunningUntilFailure>
+      <Sequence>
+        <!-- Enable auto-aim during navigation -->
+        <PublishAutoAim value="1"
+                        duration="0"
+                        topic_name="auto_aim_switch"/>
+
+        <!-- Leg 1: Forward to waypoint A -->
+        <PublishSpinSpeed spin_speed="0.0"
+                          duration="0"
+                          topic_name="cmd_spin"/>
+        <RetryUntilSuccessful num_attempts="3">
+          <SendNav2Goal goal="0.8;0.0;0.0"
+                        action_name="navigate_to_pose"/>
+        </RetryUntilSuccessful>
+
+        <!-- Spin test at waypoint A (3 seconds) -->
+        <PublishSpinSpeed spin_speed="5.0"
+                          duration="3000"
+                          topic_name="cmd_spin"/>
+
+        <!-- Leg 2: Return to origin -->
+        <PublishSpinSpeed spin_speed="0.0"
+                          duration="0"
+                          topic_name="cmd_spin"/>
+        <RetryUntilSuccessful num_attempts="3">
+          <SendNav2Goal goal="0.0;0.0;3.14159"
+                        action_name="navigate_to_pose"/>
+        </RetryUntilSuccessful>
+
+        <!-- Spin test at origin (3 seconds) -->
+        <PublishSpinSpeed spin_speed="5.0"
+                          duration="3000"
+                          topic_name="cmd_spin"/>
+      </Sequence>
+    </KeepRunningUntilFailure>
+  </BehaviorTree>
+
+  <!-- ============================== -->
+  <!-- Subtree: gimbal_scan_loop      -->
+  <!-- ============================== -->
+  <BehaviorTree ID="gimbal_scan_loop">
+    <KeepRunningUntilFailure>
+      <PublishGimbalVelocity gimbal_vel_yaw="1.0"
+                             gimbal_vel_pitch="0.0"
+                             yaw_min="-3.14159"
+                             yaw_max="0.0"
+                             pitch_min="-0.5"
+                             pitch_max="0.5"
+                             duration="0"
+                             topic_name="gimbal_scan_cmd"/>
+    </KeepRunningUntilFailure>
+  </BehaviorTree>
+
+  <!-- ========================================= -->
+  <!-- Main tree: mobility_test                   -->
+  <!-- ========================================= -->
+  <BehaviorTree ID="mobility_test">
+    <KeepRunningUntilFailure>
+      <ForceSuccess>
+        <ReactiveSequence>
+          <SubTree ID="check_start"/>
+
+          <!-- Navigation + Gimbal scan in parallel -->
+          <!-- failure_count=2: both must fail to abort -->
+          <Parallel success_count="1" failure_count="2">
+            <SubTree ID="nav_shuttle"/>
+            <SubTree ID="gimbal_scan_loop"/>
+          </Parallel>
+
+        </ReactiveSequence>
+      </ForceSuccess>
+    </KeepRunningUntilFailure>
+  </BehaviorTree>
+
+</root>

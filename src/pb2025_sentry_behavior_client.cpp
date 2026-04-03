@@ -71,7 +71,8 @@ void SentryBehaviorClient::resultCallback(
     case rclcpp_action::ResultCode::UNKNOWN:
       break;
   }
-  timer_->reset();
+  RCLCPP_INFO(
+    get_logger(), "One-shot mode: not resubmitting Behavior Tree goal '%s'", target_tree_.c_str());
 }
 
 void SentryBehaviorClient::feedbackCallback(

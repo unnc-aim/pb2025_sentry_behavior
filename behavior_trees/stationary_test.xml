@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+
+  <!-- ============================================ -->
+  <!-- Main tree: stationary_test                   -->
+  <!-- Static test in crowded prep area:            -->
+  <!-- - no navigation actions                       -->
+  <!-- - chassis stays still                         -->
+  <!-- - gimbal scan runs when game/manual starts    -->
+  <!-- ============================================ -->
+  <BehaviorTree ID="stationary_test">
+    <KeepRunningUntilFailure>
+      <ForceSuccess>
+        <ReactiveSequence>
+          <!-- Inline start gate to avoid subtree-name collisions -->
+          <Fallback>
+            <IsGameStatus name="IsGameStart"
+                          max_remain_time="420"
+                          min_remain_time="0"
+                          expected_game_progress="4"
+                          key_port="{@referee_gameStatus}"/>
+            <IsManualStart key_port="{@manual_start}"
+                           start_value="1"/>
+            <ForceFailure>
+              <Sequence>
+                <PublishSpinSpeed spin_speed="0.0"
+                                  duration="0"
+                                  topic_name="cmd_spin"/>
+                <PublishTwist v_x="0.0"
+                              v_y="0.0"
+                              v_yaw="0.0"
+                              duration="0"
+                              topic_name="cmd_vel"/>
+                <PublishAutoAim value="0"
+                                duration="0"
+                                topic_name="auto_aim_switch"/>
+              </Sequence>
+            </ForceFailure>
+          </Fallback>
+
+          <Sequence>
+            <!-- Keep chassis motion disabled in static test -->
+            <PublishSpinSpeed spin_speed="0.0"
+                              duration="0"
+                              topic_name="cmd_spin"/>
+            <PublishAutoAim value="0"
+                            duration="0"
+                            topic_name="auto_aim_switch"/>
+            <PublishTwist v_x="0.0"
+                          v_y="0.0"
+                          v_yaw="0.0"
+                          duration="0"
+                          topic_name="cmd_vel"/>
+
+            <KeepRunningUntilFailure>
+                <PublishGimbalVelocity gimbal_vel_yaw="1.0"
+                                       gimbal_vel_pitch="0.0"
+                                       yaw_min="-3.14159"
+                                       yaw_max="0.0"
+                                       pitch_min="-0.5"
+                                       pitch_max="0.5"
+                                       duration="0"
+                                       topic_name="gimbal_scan_cmd"/>
+            </KeepRunningUntilFailure>
+          </Sequence>
+        </ReactiveSequence>
+      </ForceSuccess>
+    </KeepRunningUntilFailure>
+  </BehaviorTree>
+
+</root>

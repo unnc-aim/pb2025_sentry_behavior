@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+
+  <!-- ============================== -->
+  <!-- Subtree: check_game_start      -->
+  <!-- Checks if game is running or   -->
+  <!-- manual start is triggered.     -->
+  <!-- If neither, stops the robot.   -->
+  <!-- ============================== -->
+  <BehaviorTree ID="check_game_start">
+    <Fallback>
+      <IsGameStatus name="IsGameStart"
+                    max_remain_time="420"
+                    min_remain_time="0"
+                    expected_game_progress="4"
+                    key_port="{@referee_gameStatus}"/>
+      <IsManualStart key_port="{@manual_start}"
+                     start_value="1"/>
+      <ForceFailure>
+        <Sequence>
+          <PublishSpinSpeed spin_speed="0.0"
+                            duration="0"
+                            topic_name="cmd_spin"/>
+          <PublishTwist v_y="0.0"
+                        v_yaw="0.0"
+                        v_x="0.0"
+                        duration="0"
+                        topic_name="cmd_vel"/>
+          <PublishAutoAim value="0"
+                          duration="0"
+                          topic_name="auto_aim_switch"/>
+        </Sequence>
+      </ForceFailure>
+    </Fallback>
+  </BehaviorTree>
+
+  <!-- ============================== -->
+  <!-- Subtree: patrol_perimeter      -->
+  <!-- Outbound pass along measured   -->
+  <!-- real-vehicle training points:  -->
+  <!-- (0,0) -> (6,0) -> (6,5.25) ->  -->
+  <!-- (3,5.25)                       -->
+  <!-- ============================== -->
+  <BehaviorTree ID="patrol_perimeter">
+    <SendNav2ThroughPoses goals="6;0;0|6;5.25;0|3;5.25;0"
+                          action_name="navigate_through_poses"/>
+  </BehaviorTree>
+
+  <!-- ============================== -->
+  <!-- Subtree: patrol_interior       -->
+  <!-- Return pass back to start via  -->
+  <!-- the same measured corridor:    -->
+  <!-- (3,5.25) -> (6,5.25) ->        -->
+  <!-- (6,0) -> (0,0)                 -->
+  <!-- ============================== -->
+  <BehaviorTree ID="patrol_interior">
+    <SendNav2ThroughPoses goals="6;5.25;0|6;0;0|0;0;0"
+                          action_name="navigate_through_poses"/>
+  </BehaviorTree>
+
+  <!-- ============================== -->
+  <!-- Subtree: patrol_reverse        -->
+  <!-- Repeat one full round trip     -->
+  <!-- along the measured route for   -->
+  <!-- additional real-vehicle        -->
+  <!-- adaptation data                -->
+  <!-- ============================== -->
+  <BehaviorTree ID="patrol_reverse">
+    <SendNav2ThroughPoses goals="6;0;0|6;5.25;0|3;5.25;0|6;5.25;0|6;0;0|0;0;0"
+                          action_name="navigate_through_poses"/>
+  </BehaviorTree>
+
+  <!-- ============================== -->
+  <!-- Main: field_mapping_training   -->
+  <!-- 3 passes along the measured    -->
+  <!-- real-vehicle route for SLAM    -->
+  <!-- adaptation and map checking.   -->
+  <!--                                -->
+  <!-- Guarded by check_game_start:   -->
+  <!-- robot waits for game/manual    -->
+  <!-- start, halts if game stops.    -->
+  <!--                                -->
+  <!-- Usage:                         -->
+  <!-- 1) Launch nav in SLAM mode     -->
+  <!-- 2) Run this behavior tree      -->
+  <!-- 3) Save map after completion:  -->
+  <!--    ros2 run nav2_map_server    -->
+  <!--      map_saver_cli -f <name>   -->
+  <!-- ============================== -->
+  <BehaviorTree ID="field_mapping_training">
+    <KeepRunningUntilFailure>
+      <ForceSuccess>
+        <ReactiveSequence>
+          <SubTree ID="check_game_start"/>
+          <Sequence>
+            <!-- Disable spin for clean SLAM mapping -->
+            <PublishSpinSpeed spin_speed="0.0"
+                              duration="0"
+                              topic_name="cmd_spin"/>
+            <!-- Disable auto-aim (not needed for mapping) -->
+            <PublishAutoAim value="0"
+                            duration="0"
+                            topic_name="auto_aim_switch"/>
+
+            <!-- Patrol with continuous gimbal scan -->
+            <Parallel success_count="1" failure_count="2">
+              <RetryUntilSuccessful num_attempts="-1">
+                <Sequence>
+                  <!-- Lap 1: perimeter -->
+                  <SubTree ID="patrol_perimeter"/>
+                  <Sleep msec="2000"/>
+
+                  <!-- Lap 2: interior cross -->
+                  <SubTree ID="patrol_interior"/>
+                  <Sleep msec="2000"/>
+
+                  <!-- Lap 3: reverse perimeter -->
+                  <SubTree ID="patrol_reverse"/>
+                </Sequence>
+              </RetryUntilSuccessful>
+              <KeepRunningUntilFailure>
+                  <PublishGimbalVelocity gimbal_vel_yaw="1.0"
+                                         gimbal_vel_pitch="0.0"
+                                         yaw_min="-3.14159"
+                                         yaw_max="0.0"
+                                         pitch_min="-0.5"
+                                         pitch_max="0.5"
+                                         duration="0"
+                                         topic_name="gimbal_scan_cmd"/>
+              </KeepRunningUntilFailure>
+            </Parallel>
+
+            <!-- Stop movement -->
+            <PublishTwist v_x="0.0"
+                          v_y="0.0"
+                          v_yaw="0.0"
+                          duration="0"
+                          topic_name="cmd_vel"/>
+          </Sequence>
+        </ReactiveSequence>
+      </ForceSuccess>
+    </KeepRunningUntilFailure>
+  </BehaviorTree>
+
+</root>

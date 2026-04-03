@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+
+  <!-- ============================== -->
+  <!-- Debug version of field mapping -->
+  <!-- training. No referee system    -->
+  <!-- dependency. 2.5m x 2.5m square -->
+  <!-- patrol for tabletop testing.   -->
+  <!-- ============================== -->
+
+  <!-- ============================== -->
+  <!-- Subtree: patrol_square         -->
+  <!-- 2.5m x 2.5m square perimeter   -->
+  <!-- (0,0)->(2.5,0)->(2.5,2.5)     -->
+  <!-- ->(0,2.5)->(0,0)             -->
+  <!-- -> back to (0,0)              -->
+  <!-- ============================== -->
+  <BehaviorTree ID="patrol_square">
+    <SendNav2ThroughPoses goals="2.5;0;0|2.5;2.5;0|0;2.5;0|0;0;0"
+                          action_name="navigate_through_poses"/>
+  </BehaviorTree>
+
+  <!-- ============================== -->
+  <!-- Subtree: patrol_diagonal       -->
+  <!-- Diagonal cross through the     -->
+  <!-- 2.5m x 2.5m square for         -->
+  <!-- SLAM viewpoint coverage        -->
+  <!-- ============================== -->
+  <BehaviorTree ID="patrol_diagonal">
+    <SendNav2ThroughPoses goals="2.5;2.5;0|0;0;0|2.5;0;0|0;2.5;0|0;0;0"
+                          action_name="navigate_through_poses"/>
+  </BehaviorTree>
+
+  <!-- ============================== -->
+  <!-- Subtree: patrol_square_reverse -->
+  <!-- Reverse direction perimeter    -->
+  <!-- ============================== -->
+  <BehaviorTree ID="patrol_square_reverse">
+    <SendNav2ThroughPoses goals="0;2.5;0|2.5;2.5;0|2.5;0;0|0;0;0"
+                          action_name="navigate_through_poses"/>
+  </BehaviorTree>
+
+  <!-- ============================== -->
+  <!-- Main: field_mapping_training   -->
+  <!--        _debug                  -->
+  <!-- No referee. Runs immediately.  -->
+  <!-- 3 laps on a 2.5m square.      -->
+  <!-- ============================== -->
+  <BehaviorTree ID="field_mapping_training_debug">
+    <Sequence>
+      <!-- Disable spin for clean SLAM mapping -->
+      <PublishSpinSpeed spin_speed="0.0"
+                        duration="0"
+                        topic_name="cmd_spin"/>
+      <!-- Disable auto-aim (not needed for mapping) -->
+      <PublishAutoAim value="0"
+                      duration="0"
+                      topic_name="auto_aim_switch"/>
+
+      <!-- Lap 1: square perimeter -->
+      <SubTree ID="patrol_square"/>
+      <Sleep msec="2000"/>
+
+      <!-- Lap 2: diagonal cross -->
+      <SubTree ID="patrol_diagonal"/>
+      <Sleep msec="2000"/>
+
+      <!-- Lap 3: reverse square -->
+      <SubTree ID="patrol_square_reverse"/>
+
+      <!-- Stop movement -->
+      <PublishTwist v_x="0.0"
+                    v_y="0.0"
+                    v_yaw="0.0"
+                    duration="0"
+                    topic_name="cmd_vel"/>
+    </Sequence>
+  </BehaviorTree>
+
+</root>
